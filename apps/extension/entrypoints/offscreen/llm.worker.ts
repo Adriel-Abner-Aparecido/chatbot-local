@@ -1,0 +1,1 @@
+import "@localchat/core/worker";

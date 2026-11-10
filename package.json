@@ -1,0 +1,20 @@
+{
+  "name": "localchat",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Chatbot open source com IA 100% local no navegador (WebGPU) — app web + extensão para Chrome e Edge",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @localchat/web dev",
+    "dev:ext": "pnpm --filter @localchat/extension dev",
+    "dev:ext:edge": "pnpm --filter @localchat/extension dev:edge",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "zip:ext": "pnpm --filter @localchat/extension zip"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.10",
+    "typescript": "^5.9.3"
+  }
+}

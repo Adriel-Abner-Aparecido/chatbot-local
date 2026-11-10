@@ -1,0 +1,25 @@
+{
+  "name": "@localchat/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./local": "./src/engines/local.ts",
+    "./protocol": "./src/bridge/protocol.ts",
+    "./worker": "./src/worker.ts",
+    "./host": "./src/bridge/host.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "check:models": "node scripts/check-models.ts"
+  },
+  "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.88"
+  },
+  "devDependencies": {
+    "@webgpu/types": "^0.1.74",
+    "@types/chrome": "^0.3.7",
+    "typescript": "^5.9.3"
+  }
+}

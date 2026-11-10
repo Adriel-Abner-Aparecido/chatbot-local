@@ -1,0 +1,1 @@
+{ "extends": "../../tsconfig.base.json", "compilerOptions": { "types": ["@webgpu/types", "chrome"] }, "include": ["src"] }
