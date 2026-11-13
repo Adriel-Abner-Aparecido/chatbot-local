@@ -1,5 +1,5 @@
 import { CLIENT_PORT, PROTOCOL_VERSION, type ClientRequest, type HostEvent } from "../bridge/protocol";
-import type { ChatEngine, ChatMessage, ChatOptions, LoadProgress } from "../types";
+import type { ChatEngine, ChatMessage, ChatOptions, LoadOptions, LoadProgress } from "../types";
 
 type Port = chrome.runtime.Port;
 
@@ -16,11 +16,13 @@ interface Pending {
 export class ExtensionChatEngine implements ChatEngine {
   readonly kind = "extension" as const;
   private model: string | null;
+  private ctx: number | null;
   private pending = new Map<string, Pending>();
   private seq = 0;
 
-  private constructor(private readonly port: Port, currentModel: string | null) {
+  private constructor(private readonly port: Port, currentModel: string | null, contextWindow: number | null) {
     this.model = currentModel;
+    this.ctx = contextWindow;
     port.onMessage.addListener((ev: HostEvent) => {
       if (ev.type === "hello") return;
       this.pending.get(ev.id)?.onEvent(ev);
@@ -57,7 +59,7 @@ export class ExtensionChatEngine implements ChatEngine {
       function onHello(ev: HostEvent) {
         if (ev.type !== "hello") return;
         if (ev.version !== PROTOCOL_VERSION) return finish(null);
-        finish(new ExtensionChatEngine(port, ev.currentModel));
+        finish(new ExtensionChatEngine(port, ev.currentModel, ev.contextWindow));
       }
       function onGone() {
         void runtime.lastError; // evita "Unchecked runtime.lastError" no console
@@ -71,6 +73,10 @@ export class ExtensionChatEngine implements ChatEngine {
 
   get currentModel() {
     return this.model;
+  }
+
+  get currentContextWindow() {
+    return this.ctx;
   }
 
   private request<T>(
@@ -91,16 +97,18 @@ export class ExtensionChatEngine implements ChatEngine {
     });
   }
 
-  async load(modelId: string, onProgress?: (p: LoadProgress) => void) {
-    if (this.model === modelId) return;
+  async load(modelId: string, onProgress?: (p: LoadProgress) => void, opts: LoadOptions = {}) {
+    const ctx = opts.contextWindow ?? null;
+    if (this.model === modelId && this.ctx === ctx) return;
     await this.request<void>(
-      (id) => ({ type: "load", id, modelId }),
+      (id) => ({ type: "load", id, modelId, contextWindow: ctx }),
       (ev, resolve) => {
         if (ev.type === "progress") onProgress?.({ progress: ev.progress, text: ev.text });
         if (ev.type === "loaded") resolve();
       },
     );
     this.model = modelId;
+    this.ctx = ctx;
   }
 
   chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<string> {
@@ -117,6 +125,7 @@ export class ExtensionChatEngine implements ChatEngine {
           id,
           messages,
           temperature: opts.temperature,
+          topP: opts.topP,
           maxTokens: opts.maxTokens,
           thinking: opts.thinking,
         };
@@ -137,6 +146,7 @@ export class ExtensionChatEngine implements ChatEngine {
       (ev, resolve) => ev.type === "unloaded" && resolve(),
     );
     this.model = null;
+    this.ctx = null;
   }
 
   dispose() {

@@ -83,7 +83,24 @@ body {
 .lc-msg { max-width: 760px; padding: 10px 14px; border-radius: var(--lc-radius); white-space: pre-wrap; overflow-wrap: anywhere; }
 .lc-msg-user { align-self: flex-end; background: var(--lc-user); }
 .lc-msg-assistant { align-self: flex-start; background: var(--lc-panel); border: 1px solid var(--lc-border); }
-.lc-typing { color: var(--lc-muted); }
+.lc-typing { color: var(--lc-muted); display: inline-flex; align-items: center; min-height: 1.5em; }
+.lc-thinking { color: var(--lc-muted); font-style: italic; display: inline-flex; align-items: baseline; gap: 2px; }
+.lc-dots { display: inline-flex; gap: 4px; align-items: center; margin-left: 2px; }
+.lc-dots span {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  animation: lc-bounce 1.2s ease-in-out infinite;
+}
+.lc-thinking .lc-dots span { width: 4px; height: 4px; }
+.lc-dots span:nth-child(2) { animation-delay: .15s; }
+.lc-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes lc-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: .35; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lc-dots span { animation: lc-fade 1.2s ease-in-out infinite; }
+  @keyframes lc-fade { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+}
 
 .lc-composer { display: flex; gap: 8px; align-items: flex-end; padding: 12px 16px; border-top: 1px solid var(--lc-border); background: var(--lc-panel); }
 .lc-composer textarea {
@@ -98,3 +115,29 @@ body {
 .lc-compact .lc-messages { padding: 10px; }
 .lc-compact .lc-composer { padding: 8px 10px; }
 @media (max-width: 720px) { .lc-sidebar { display: none; } }
+
+/* painel de configurações */
+.lc-btn.is-active { border-color: var(--lc-accent); color: var(--lc-accent); }
+.lc-settings {
+  margin: 8px 16px 0; padding: 12px 14px; border-radius: var(--lc-radius);
+  border: 1px solid var(--lc-border); background: var(--lc-panel); max-height: 55vh; overflow-y: auto;
+}
+.lc-settings-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.lc-settings-actions { display: flex; gap: 6px; }
+.lc-settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 20px; }
+.lc-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 0; }
+.lc-field-wide { grid-column: 1 / -1; }
+.lc-field-label { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.lc-field-label output { font-weight: 400; color: var(--lc-muted); font-variant-numeric: tabular-nums; }
+.lc-field small { color: var(--lc-muted); font-size: 12px; line-height: 1.35; }
+.lc-field input[type="range"] { width: 100%; accent-color: var(--lc-accent); }
+.lc-field input[type="number"], .lc-field select, .lc-field textarea {
+  padding: 6px 8px; border-radius: 8px; border: 1px solid var(--lc-border);
+  background: var(--lc-bg); color: inherit; font: inherit;
+}
+.lc-field textarea { resize: vertical; }
+.lc-field-check { flex-direction: row; align-items: flex-start; gap: 8px; }
+.lc-field-check > span { display: flex; flex-direction: column; gap: 2px; }
+.lc-field-check input { margin-top: 3px; accent-color: var(--lc-accent); }
+.lc-field input:focus-visible, .lc-field select:focus-visible, .lc-field textarea:focus-visible { outline: 2px solid var(--lc-accent); outline-offset: -1px; }
+.lc-compact .lc-settings { margin: 6px 10px 0; padding: 10px; }

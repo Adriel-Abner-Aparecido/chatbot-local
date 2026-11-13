@@ -13,13 +13,20 @@ export function createEngineHost(engine: ChatEngine) {
   async function handle(req: ClientRequest, reply: Reply) {
     switch (req.type) {
       case "hello":
-        reply({ type: "hello", version: PROTOCOL_VERSION, currentModel: engine.currentModel });
+        reply({
+          type: "hello",
+          version: PROTOCOL_VERSION,
+          currentModel: engine.currentModel,
+          contextWindow: engine.currentContextWindow,
+        });
         return;
 
       case "load":
         try {
-          await engine.load(req.modelId, (p) =>
-            reply({ type: "progress", id: req.id, progress: p.progress, text: p.text }),
+          await engine.load(
+            req.modelId,
+            (p) => reply({ type: "progress", id: req.id, progress: p.progress, text: p.text }),
+            { contextWindow: req.contextWindow },
           );
           reply({ type: "loaded", id: req.id, modelId: req.modelId });
         } catch (e) {
@@ -33,6 +40,7 @@ export function createEngineHost(engine: ChatEngine) {
         try {
           const text = await engine.chat(req.messages, {
             temperature: req.temperature,
+            topP: req.topP,
             maxTokens: req.maxTokens,
             thinking: req.thinking,
             signal: ac.signal,

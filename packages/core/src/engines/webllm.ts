@@ -1,5 +1,5 @@
 import type { MLCEngineInterface } from "@mlc-ai/web-llm";
-import type { ChatEngine, ChatMessage, ChatOptions, LoadProgress } from "../types";
+import type { ChatEngine, ChatMessage, ChatOptions, LoadOptions, LoadProgress } from "../types";
 import { familyOf } from "../models";
 import { stripThinking } from "../thinking";
 
@@ -10,6 +10,7 @@ import { stripThinking } from "../thinking";
 export class WebLLMChatEngine implements ChatEngine {
   readonly kind: "local" | "extension";
   private model: string | null = null;
+  private ctx: number | null = null;
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(
@@ -24,11 +25,18 @@ export class WebLLMChatEngine implements ChatEngine {
     return this.model;
   }
 
-  async load(modelId: string, onProgress?: (p: LoadProgress) => void) {
-    if (this.model === modelId) return;
+  get currentContextWindow() {
+    return this.ctx;
+  }
+
+  async load(modelId: string, onProgress?: (p: LoadProgress) => void, opts: LoadOptions = {}) {
+    const ctx = opts.contextWindow ?? null;
+    if (this.model === modelId && this.ctx === ctx) return;
     this.engine.setInitProgressCallback((r) => onProgress?.({ progress: r.progress, text: r.text }));
-    await this.engine.reload(modelId);
+    this.model = null;
+    await this.engine.reload(modelId, ctx ? { context_window_size: ctx } : undefined);
     this.model = modelId;
+    this.ctx = ctx;
   }
 
   chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<string> {
@@ -49,6 +57,7 @@ export class WebLLMChatEngine implements ChatEngine {
         messages,
         stream: true,
         temperature: opts.temperature ?? 0.7,
+        ...(opts.topP !== undefined ? { top_p: opts.topP } : {}),
         max_tokens: opts.maxTokens ?? 1024,
         ...(fam?.supportsThinking ? { extra_body: { enable_thinking: opts.thinking ?? false } } : {}),
       });
@@ -69,6 +78,7 @@ export class WebLLMChatEngine implements ChatEngine {
   async unload() {
     await this.engine.unload();
     this.model = null;
+    this.ctx = null;
   }
 
   dispose() {

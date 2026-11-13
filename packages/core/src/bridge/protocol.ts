@@ -1,16 +1,17 @@
 import type { ChatMessage } from "../types";
 
 /** Versão do protocolo entre site/side panel e o engine hospedado na extensão. */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 export type ClientRequest =
   | { type: "hello" }
-  | { type: "load"; id: string; modelId: string }
+  | { type: "load"; id: string; modelId: string; contextWindow?: number | null }
   | {
       type: "chat";
       id: string;
       messages: ChatMessage[];
       temperature?: number;
+      topP?: number;
       maxTokens?: number;
       thinking?: boolean;
     }
@@ -18,7 +19,7 @@ export type ClientRequest =
   | { type: "unload"; id: string };
 
 export type HostEvent =
-  | { type: "hello"; version: number; currentModel: string | null }
+  | { type: "hello"; version: number; currentModel: string | null; contextWindow: number | null }
   | { type: "progress"; id: string; progress: number; text: string }
   | { type: "loaded"; id: string; modelId: string }
   | { type: "token"; id: string; delta: string }

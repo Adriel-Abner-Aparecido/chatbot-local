@@ -13,11 +13,17 @@ export interface LoadProgress {
 
 export interface ChatOptions {
   temperature?: number;
+  topP?: number;
   maxTokens?: number;
   /** Modelos Qwen3 têm modo "thinking"; desligado por padrão pra respostas mais rápidas. */
   thinking?: boolean;
   signal?: AbortSignal;
   onToken?: (delta: string, full: string) => void;
+}
+
+export interface LoadOptions {
+  /** Janela de contexto em tokens; omitido = padrão do modelo. */
+  contextWindow?: number | null;
 }
 
 /**
@@ -27,7 +33,9 @@ export interface ChatOptions {
 export interface ChatEngine {
   readonly kind: "local" | "extension";
   readonly currentModel: string | null;
-  load(modelId: string, onProgress?: (p: LoadProgress) => void): Promise<void>;
+  /** Janela de contexto pedida no último load (null = padrão do modelo). */
+  readonly currentContextWindow: number | null;
+  load(modelId: string, onProgress?: (p: LoadProgress) => void, opts?: LoadOptions): Promise<void>;
   chat(messages: ChatMessage[], opts?: ChatOptions): Promise<string>;
   unload(): Promise<void>;
   dispose(): void;

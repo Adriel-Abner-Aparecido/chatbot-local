@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { familyOf } from "@localchat/core";
 import { useChat, type UseChatOptions } from "./useChat";
+import { SettingsPanel } from "./SettingsPanel";
+import { TypingDots } from "./TypingDots";
 
 export interface ChatProps extends UseChatOptions {
   /** Layout estreito (side panel da extensão): esconde a lista de conversas. */
@@ -10,6 +13,7 @@ export interface ChatProps extends UseChatOptions {
 export function Chat({ compact = false, title = "LocalChat", ...opts }: ChatProps) {
   const c = useChat(opts);
   const [input, setInput] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,7 +21,7 @@ export function Chat({ compact = false, title = "LocalChat", ...opts }: ChatProp
   }, [c.messages, c.streaming]);
 
   const current = c.models.find((m) => m.id === c.selected);
-  const loadedHere = c.engine?.currentModel === c.selected;
+  const loadedHere = c.engine?.currentModel === c.selected && !c.needsReload;
   const busy = c.status === "loading" || c.status === "generating";
 
   function submit() {
@@ -89,7 +93,16 @@ export function Chat({ compact = false, title = "LocalChat", ...opts }: ChatProp
               disabled={busy || !c.engine || loadedHere}
               onClick={() => void c.loadModel()}
             >
-              {loadedHere ? "Carregado" : "Carregar"}
+              {loadedHere ? "Carregado" : c.needsReload ? "Recarregar" : "Carregar"}
+            </button>
+            <button
+              className={`lc-btn${showSettings ? " is-active" : ""}`}
+              onClick={() => setShowSettings((v) => !v)}
+              title="Configurações do modelo"
+              aria-label="Configurações do modelo"
+              aria-expanded={showSettings}
+            >
+              ⚙
             </button>
             {compact && (
               <button className="lc-btn" onClick={c.newConversation} title="Nova conversa">
@@ -105,6 +118,17 @@ export function Chat({ compact = false, title = "LocalChat", ...opts }: ChatProp
             {!current.permissive && " (verifique os termos)"}
             {c.gpu?.supported && ` · GPU ${c.gpu.vendor || "?"}${c.gpu.f16 ? " · f16" : ""}`}
           </div>
+        )}
+
+        {showSettings && (
+          <SettingsPanel
+            settings={c.settings}
+            onChange={c.updateSettings}
+            onReset={c.resetSettings}
+            onClose={() => setShowSettings(false)}
+            supportsThinking={!!familyOf(c.selected)?.supportsThinking}
+            defaultSystemPrompt={opts.systemPrompt}
+          />
         )}
 
         {c.progress && (
@@ -132,7 +156,20 @@ export function Chat({ compact = false, title = "LocalChat", ...opts }: ChatProp
             </div>
           ))}
           {c.status === "generating" && (
-            <div className="lc-msg lc-msg-assistant">{c.streaming || <span className="lc-typing">…</span>}</div>
+            <div className="lc-msg lc-msg-assistant">
+              {c.thinking ? (
+                <span className="lc-thinking" role="status">
+                  Pensando
+                  <TypingDots />
+                </span>
+              ) : (
+                c.streaming || (
+                  <span className="lc-typing" role="status" aria-label="Gerando resposta">
+                    <TypingDots />
+                  </span>
+                )
+              )}
+            </div>
           )}
         </div>
 
